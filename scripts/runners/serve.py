@@ -40,12 +40,14 @@ def main():
         # Both native macOS releases use the same checksum-pinned runner binary.
         download_runner(directory, arch, 'macos-15')
         with (directory / 'host.log').open('wb') as log:
-            subprocess.run(['./config.sh', '--unattended', '--ephemeral', '--url',
+            registration = subprocess.run(['./config.sh', '--unattended', '--ephemeral', '--url',
                             'https://github.com/shivammathur/php-darwin', '--name', name,
                             '--token', token, '--work', '_work', '--no-default-labels',
                             '--labels', ','.join(['self-hosted', 'macOS', arch.upper(), label])],
-                           cwd=directory, env=env, stdout=log, stderr=log, timeout=120, check=True)
-            del token
+                           cwd=directory, env=env, stdout=log, stderr=log, timeout=120, check=False)
+            if registration.returncode:
+                raise RuntimeError(f'Runner registration failed with code {registration.returncode}')
+            del registration, token
             print(f'Registered {name} on macOS {version} {machine} for {label}', flush=True)
             serve_job(directory, env, log)
     finally:
